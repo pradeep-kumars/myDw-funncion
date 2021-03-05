@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="dw-pluckFlow" doc:id="cb6a8265-fefa-4ebe-a64c-c42b5c7f8dbc" >
+		<ee:transform doc:name="Transform Message" doc:id="0693cffd-0130-42e7-886f-e92f03e34da1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList = [
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 101,
+		"empName": "deep",
+		"empStatus": "I"
+	},
+	[{
+		"empID": 102,
+		"empName": "randeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 103,
+		"empName": "kumar",
+		"empStatus": "I"
+	}]
+	
+]
+---
+{
+	"employees": flatten(empList)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-pluckFlow2" doc:id="36887d11-4eee-49a1-a05a-74fe40ccf639" >
+		<http:listener doc:name="Listener" doc:id="4e33d122-79a5-4f0f-bfe5-ca27159a4ec5" config-ref="HTTP_Listener_config" path="/emplistpluck" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="0cdf8efe-a881-4f15-b4b6-94845c21e772" message="Started add Hr employee flow: #[payload]"/>
+		<ee:transform doc:name="Transform Employee Payload" doc:id="8e30e140-bce9-4957-a1a2-7df75cdcff5f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"emp_id": payload.empID,
+	"emp_name": payload.empName,
+	"emp_address": payload.empAddress pluck $ joinBy " ,",
+	"emp_status": payload.empStatus,
+	"emp_join_date": payload.empJoinDate
+
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:insert doc:name="Insert" doc:id="5cb809ca-e69b-4388-bcb3-fdc80ba70adf" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into emp_org(emp_id,emp_name,emp_address,emp_status,emp_join_date) values (:emp_id,:emp_name,:emp_address,:emp_status,:emp_join_date)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="End Log" doc:id="71950958-e322-45b7-9545-1e5077bdf683" message="Completed employee hr flow"/>
+	</flow>
+	<flow name="dw-pluckFlow1" doc:id="ee03ec39-5271-4283-a089-e95e0fbbb8dd" >
+		<ee:transform doc:name="Transform Message" doc:id="406d2f44-20e4-47b5-b5e7-97c1a47d8942" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var employee = 
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	}
+---
+{
+	"keysOfEmplouee": employee pluck $$,
+	"valuesOfEmployee": employee pluck $
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
