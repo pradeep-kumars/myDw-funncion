@@ -1,0 +1,12 @@
+{
+	"empID": 45454,
+	"empName": "Mark",
+	"empAddress": {
+		"houseNumber": "2-1-88-1",
+		"streetName": "Central Avenue",
+		"city": "New York",
+		"country": "USA"
+	},
+	"empStatus": "A",
+	"empJoinDate": "2020-06-08 08:43:12"
+}

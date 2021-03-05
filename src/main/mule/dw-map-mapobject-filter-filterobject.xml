@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="dw-map-mapobject" doc:id="6c7aa253-5f84-45d3-947f-92d68edc091e" >
+		<ee:transform doc:name="Transform Message" doc:id="d744be25-da16-492f-aed4-0d11cd548b02" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList = [
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 101,
+		"empName": "deep",
+		"empStatus": "I"
+	},
+	{
+		"empID": 102,
+		"empName": "randeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 103,
+		"empName": "kumar",
+		"empStatus": "I"
+	}
+	
+]
+---
+empList map{
+	//  ($$): $    another way to declare
+	"employeeID": $.empID,
+	"employeeName": $.empName,
+	"employeeStatus": $.empStatus
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Map" doc:id="2614fa71-0613-4fff-8e47-eb17125fd288" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList = [
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 101,
+		"empName": "deep",
+		"empStatus": "I"
+	},
+	{
+		"empID": 102,
+		"empName": "randeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 103,
+		"empName": "kumar",
+		"empStatus": "I"
+	}
+	
+]
+---
+empList map(emp, indexOfEmp) -> {
+	"employeeId": emp.empID,
+	"employeeName": emp.empName,
+	"employeeStatus": emp.empStatus
+}
+
+
+// empList map(emp, indexOfEmp) -> {
+//	(emp mapObject {
+//		($$): $,
+//	})
+//	}
+
+// if u want to add field 
+// empList map(emp, indexOfEmp) -> {
+//	(emp mapObject 
+//         if ( ($) as String == "pradeep" )   {
+//		($$): $,
+//       "empLocation": "India"
+//        } else {
+//					($$): $
+//				}
+//	)
+//	}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform MapObject" doc:id="35c3ba3f-010e-4293-8d29-183bb8d944c0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList = [
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 101,
+		"empName": "deep",
+		"empStatus": "I"
+	},
+	{
+		"empID": 102,
+		"empName": "randeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 103,
+		"empName": "kumar",
+		"empStatus": "I"
+	}
+	
+]
+---
+// empList[0] mapObject {
+	//($$): $
+	//($$):$$$
+//} 
+
+empList[0] mapObject(empValue,empKey,indexOfEmp) -> {
+	(empKey): indexOfEmp
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-map-mapobject-filter-filterobjectFlow" doc:id="20d1c38d-b20f-46a7-ab21-435ee1e9df71" >
+		<http:listener doc:name="Listener" doc:id="737e6cb7-cbaa-4ca0-82d1-5691444e4962" config-ref="HTTP_Listener_config" path="/mapfilter"/>
+		<db:select doc:name="Select" doc:id="23c6708f-108d-45ca-9ec5-df6813a6f805" config-ref="Database_Config">
+			<db:sql ><![CDATA[select emp_id,emp_name,emp_status,emp_appr_year,emp_appr_per,emp_exp,emp_salary,emp_desig,emp_age from emp_backup]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="1e282ce7-3c4a-4689-b1d7-7eef287a8666" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload filter($.emp_desig == "Manager" and $.emp_status == "A") map ( payload01 , indexOfPayload01 ) -> {
+	employeeID: payload01.emp_id as String default "",
+	employeeName: payload01.emp_name default "",
+	employeeStatus: payload01.emp_status default "",
+	employeeAppYear: payload01.emp_appr_year default "",
+	employeeApprPer: payload01.emp_appr_per default "",
+	employeeExp: payload01.emp_exp as String default "",
+	employeeSalary: payload01.emp_salary default "",
+	employeeDesg: payload01.emp_desig default "",
+	employeeAge: payload01.emp_age as String default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-filter-filterobjectFlow" doc:id="fceb0936-4f62-4eeb-893f-da991027a7c0" >
+		<ee:transform doc:name="Transform filter" doc:id="bed1b6b7-40dc-427a-ba45-72b51e6345e6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList = [
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 101,
+		"empName": "deep",
+		"empStatus": "I"
+	},
+	{
+		"empID": 102,
+		"empName": "randeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 103,
+		"empName": "kumar",
+		"empStatus": "I"
+	}
+	
+]
+---
+empList filter($.empStatus=="A") map(emp, indexOfEmp) -> {
+	"employeeId": emp.empID,
+	"employeeName": emp.empName,
+	"employeeStatus": emp.empStatus
+}
+
+// empList filter($.empStatus=="A") map {
+//	"employeeId": $.empID,
+//	"employeeName": $.empName,
+//	"employeeStatus": $.empStatus
+//}
+
+//empList filter($.empStatus=="A" and $.empName == "pradeep") map(emp, indexOfEmp) -> {
+//	"employeeId": emp.empID,
+//	"employeeName": emp.empName,
+//	"employeeStatus": emp.empStatus
+//}
+
+
+// empList map((emp, indexOfEmp) -> {
+//	 "employeeId": emp.empID,
+//	 "employeeName": emp.empName,
+//	 "employeeStatus": emp.empStatus
+//  }) filter($.employeeStatus == "A" and $.employeeName == "pradeep")
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform filteObject" doc:id="d1242514-5240-4477-92d6-71ee7bea12ef" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var empList = [
+	{
+		"empID": 100,
+		"empName": "pradeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 101,
+		"empName": "deep",
+		"empStatus": "I"
+	},
+	{
+		"empID": 102,
+		"empName": "randeep",
+		"empStatus": "A"
+	},
+	{
+		"empID": 103,
+		"empName": "kumar",
+		"empStatus": "I"
+	}
+	
+]
+---
+empList[0] filterObject(($) == 100) mapObject(empValue,empKey,indexOfEmp) -> 
+{
+	(empKey): empValue
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
